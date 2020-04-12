@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zedh.dao.CourseDao">
+    <select id="findAll" resultType="Course">
+        select * from course
+    </select>
+    <!--insert的返回值为0/1-->
+    <insert id="Insert">
+        insert into course (cname,clocal) values (#{cname},#{clocal})
+    </insert>
+</mapper>

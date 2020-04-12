@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <!--1开启注解-->
+    <context:component-scan base-package="com.zedh">
+        <!--目的是把表现层和业务层分开-->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+    <!--spring整合mybatis框架-->
+    <!--1引入数据源-->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/ssm"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123"/>
+    </bean>
+    <!--2配置sqlsessionfactory-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!--整合优化时添加-->
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+    </bean>
+    <!--3配置dao所在的b包-->
+    <bean id="mapperscanner" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--整合优化时添加-->
+        <!--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+        <property name="basePackage" value="com.zedh.dao"/>
+    </bean>
+
+
+    <!--配置spring框架声明式事务管理-->
+    <!--1配置事务管理器-->
+    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!--2配置事务通知-->
+    <!--解析tx:advice  https://blog.csdn.net/rong_wz/article/details/53787648?depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1&utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1-->
+    <tx:advice id="myAdvice" transaction-manager="dataSourceTransactionManager">
+        <tx:attributes>
+            <!--find开头的事务开启只读，这种执行效率会比read-write的Connection高-->
+            <tx:method name="find*" read-only="true"/>
+            <!--出现异常回滚-->
+            <tx:method name="add*" read-only="false" rollback-for="java.lang.Exception"/>
+            <!--除了find和add开头的事务隔离   DEFAULT：采用数据库默认隔离级别-->
+            <tx:method name="*" isolation="DEFAULT"/>
+        </tx:attributes>
+    </tx:advice>
+    <!--3配置aop增强-->
+    <aop:config>
+        <!--execution 可以写(* com.zedh.service.*.*(..))表示所有文件的所有方法-->
+        <aop:advisor advice-ref="myAdvice" pointcut="execution(* com.zedh.service.*CourseServiceImpl.*(..))"></aop:advisor>
+    </aop:config>
+
+</beans>
